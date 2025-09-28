@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set model source
         saraswatiModel.setAttribute('gltf-model', '#idol-model');
         
-        // In your asset-loader.js, modify the model-loaded handler
+       // In your asset-loader.js, modify the model-loaded handler
 saraswatiModel.addEventListener('model-loaded', function(e) {
     console.log('Main model loaded successfully!');
     saraswatiModel.setAttribute('visible', 'true');
@@ -179,8 +179,8 @@ saraswatiModel.addEventListener('model-loaded', function(e) {
     // Set a default scale
     saraswatiModel.setAttribute('scale', '3 3 3');
     
-    // Ensure the model is in front of camera
-    saraswatiModel.setAttribute('position', '0 1.5 -2');
+    // Don't set position here - let main.js handle it
+    // saraswatiModel.setAttribute('position', '0 1.5 -2'); // Remove this line
     
     assetLoaded('model');
 });
