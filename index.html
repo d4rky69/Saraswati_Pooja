@@ -24,8 +24,6 @@
         </div>
         <div class="loading-text">SARASWATI POOJA</div>
         <div class="loading-progress">Loading Experience... <span id="progress-percent">0%</span></div>
-        <div id="progress-details" class="loading-details"></div>
-        <div id="error-message" class="error-message" style="display:none;"></div>
     </div>
 
     <div id="controls">
@@ -48,34 +46,27 @@
     </div>
     
     <a-scene loading-screen="enabled: false" device-orientation-permission-ui="enabled: true" renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true;">
-        <!-- Assets preloading with better error handling -->
-        <a-assets timeout="30000">
+        <!-- Assets preloading -->
+        <a-assets timeout="60000">
             <img id="panorama" src="assets/images/mandap-panorama.jpg" crossorigin="anonymous">
             <!-- Local model file -->
             <a-asset-item id="idol-model" src="assets/models/idol.glb"></a-asset-item>
             <!-- Fallback model as backup -->
             <a-asset-item id="fallback-model" src="https://cdn.aframe.io/examples/models/duck/duck.gltf" crossorigin="anonymous"></a-asset-item>
-            
-            <!-- Audio with multiple formats for better browser support -->
-            <audio id="background-audio" preload="auto">
-                <source src="assets/audio/saraswati-chant.mp3" type="audio/mpeg">
-                <source src="assets/audio/saraswati-chant.ogg" type="audio/ogg">
-                Your browser does not support the audio element.
-            </audio>
-            
+            <audio id="background-audio" src="assets/audio/saraswati-chant.mp3" preload="auto"></audio>
             <audio id="click-sound" src="assets/audio/click.mp3" preload="auto"></audio>
         </a-assets>
         
-        <!-- 360 panorama background with visually distinct fallback color -->
+        <!-- 360 panorama background with fallback color -->
         <a-sky id="background-sky" color="#190033"></a-sky>
         
-        <!-- Saraswati idol model with FIXED scale and position -->
+        <!-- Saraswati idol model with correct rotation to face camera -->
         <a-entity
             id="saraswati-model"
-            position="0 1.2 -3"
+            position="0 1.5 -3"
             rotation="0 270 0"
-            scale="5 5 5"
-            animation="property: rotation; from: 0 270 0; to: 0 630 0; loop: true; dur: 30000; easing: linear"
+            scale="50 50 50"
+            animation="property: rotation; from: 0 270 0; to: 0 270 0; loop: true; dur: 30000; easing: linear"
             visible="false">
         </a-entity>
         
@@ -94,7 +85,7 @@
         <a-light type="point" color="#fff" intensity="1.0" position="0 2 -3"></a-light>
         
         <!-- Camera setup -->
-        <a-entity camera look-controls="touchEnabled: true" wasd-controls="enabled: false" position="0 1.6 0">
+        <a-entity camera look-controls wasd-controls="enabled: false" position="0 1.6 0">
             <a-entity cursor="fuse: false"
                 position="0 0 -1"
                 geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
@@ -102,34 +93,6 @@
             </a-entity>
         </a-entity>
     </a-scene>
-    
-    <!-- Debug console for mobile troubleshooting -->
-    <div id="debug-console" style="display:none; position:fixed; bottom:120px; left:20px; background:rgba(0,0,0,0.7); color:white; padding:10px; font-size:12px; max-width:80%; max-height:30%; overflow:auto;"></div>
-    
-    <script>
-        // Simple debug helper for mobile devices
-        function debugLog(msg) {
-            console.log(msg);
-            const debugConsole = document.getElementById('debug-console');
-            if (debugConsole) {
-                const time = new Date().toTimeString().split(' ')[0];
-                debugConsole.innerHTML += `[${time}] ${msg}<br>`;
-                debugConsole.scrollTop = debugConsole.scrollHeight;
-            }
-        }
-        
-        // Enable debug console with URL parameter ?debug=true
-        if (window.location.search.includes('debug=true')) {
-            document.getElementById('debug-console').style.display = 'block';
-            debugLog('Debug mode enabled');
-        }
-        
-        // Check for mobile browser audio issues
-        const ua = navigator.userAgent;
-        if (/iPhone|iPad|iPod|Android/i.test(ua)) {
-            debugLog(`Mobile device detected: ${ua}`);
-        }
-    </script>
     
     <script src="js/main.js"></script>
 </body>
