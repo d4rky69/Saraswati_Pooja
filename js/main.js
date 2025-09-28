@@ -234,3 +234,13 @@ const ensureModelVisibility = function() {
     scene.addEventListener('loaded', ensureModelVisibility);
     setTimeout(ensureModelVisibility, 2000);
 });
+// Add this to main.js for debugging
+function addDebugMarker() {
+    const scene = document.querySelector('a-scene');
+    const marker = document.createElement('a-sphere');
+    marker.setAttribute('position', '0 1.5 -2.5'); // Same as where model should be
+    marker.setAttribute('radius', '0.1');
+    marker.setAttribute('color', 'red');
+    scene.appendChild(marker);
+}
+// Call this function during development to see where the center is
