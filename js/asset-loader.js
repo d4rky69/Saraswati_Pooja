@@ -162,16 +162,16 @@ if (panoramaImg) {
         // Set model source
         saraswatiModel.setAttribute('gltf-model', '#idol-model');
         
-        // Model load success handler
-        saraswatiModel.addEventListener('model-loaded', function(e) {
-            console.log('Main model loaded successfully!');
-            saraswatiModel.setAttribute('visible', 'true');
-            
-            // Set a default scale in case size detection fails
-            saraswatiModel.setAttribute('scale', '50 50 50');
-            
-            assetLoaded('model');
-        });
+      // Model load success handler
+saraswatiModel.addEventListener('model-loaded', function(e) {
+    console.log('Main model loaded successfully!');
+    saraswatiModel.setAttribute('visible', 'true');
+    
+    // Set a default scale in case size detection fails
+    saraswatiModel.setAttribute('scale', '3 3 3'); // CHANGED from 50 50 50 to 3 3 3
+    
+    assetLoaded('model');
+});
         
         // Model load error handler
         saraswatiModel.addEventListener('model-error', function(e) {
