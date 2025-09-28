@@ -56,20 +56,20 @@
             <!-- Fallback model as backup -->
             <a-asset-item id="fallback-model" src="https://cdn.aframe.io/examples/models/duck/duck.gltf" crossorigin="anonymous"></a-asset-item>
             <audio id="background-audio" src="./assets/audio/saraswati-chant.mp3" preload="auto"></audio>
+            <audio id="click-sound" src="./assets/audio/click.mp3" preload="auto"></audio>
         </a-assets>
         
         <!-- 360 panorama background with fallback color -->
         <a-sky id="background-sky" color="#190033"></a-sky>
         
         <!-- Saraswati idol model with correct rotation to face camera -->
-      <!-- Replace the saraswati-model entity with this updated version -->
-<a-entity
-    id="saraswati-model"
-    position="0 1.5 -2.5"
-    rotation="0 180 0"
-    scale="3 3 3"
-    visible="true">
-</a-entity>
+        <a-entity
+            id="saraswati-model"
+            position="0 1.5 -3"
+            rotation="0 180 0"
+            scale="3 3 3"
+            visible="true">
+        </a-entity>
         
         <!-- Fallback model in case the main model fails -->
         <a-entity
