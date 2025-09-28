@@ -206,25 +206,29 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 500);
         }
     }, 12000);
-    // Ensure the model is visible and positioned correctly
-    const ensureModelVisibility = function() {
-        const idolModel = document.querySelector('#saraswati-model');
-        if (idolModel) {
-            // Make sure it's visible
-            idolModel.setAttribute('visible', 'true');
-            
-            // Position directly in front of camera (closer than before)
-            if (window.innerWidth < 768) {
-                // Mobile - very close
-                idolModel.setAttribute('position', '0 1.0 -1.5');
-            } else {
-                // Desktop - slightly further
-                idolModel.setAttribute('position', '0 1.5 -2');
-            }
-            
-            console.log('Model visibility and position updated');
+   // Replace the ensureModelVisibility function with this updated version
+const ensureModelVisibility = function() {
+    const idolModel = document.querySelector('#saraswati-model');
+    if (idolModel) {
+        // Make sure it's visible
+        idolModel.setAttribute('visible', 'true');
+        
+        // Position directly in front of camera with proper Y value
+        if (window.innerWidth < 768) {
+            // Mobile - centered and closer
+            idolModel.setAttribute('position', '0 1.2 -2');
+        } else {
+            // Desktop - centered position
+            idolModel.setAttribute('position', '0 1.5 -2.5');
         }
-    };
+        
+        // Set proper rotation to face camera directly
+        // Y rotation of 180 degrees will make the model face forward
+        idolModel.setAttribute('rotation', '0 180 0');
+        
+        console.log('Model visibility, position and rotation updated');
+    }
+};
     
     // Call it when scene is loaded and again after a short delay to ensure it takes effect
     scene.addEventListener('loaded', ensureModelVisibility);
