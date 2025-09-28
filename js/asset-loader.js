@@ -76,7 +76,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Setting up panorama loader:', panoramaImg.getAttribute('src'));
         
         // IMPORTANT: Set the sky src BEFORE waiting for load event
-        const backgroundSky = document.getElementById('background-sky');
         if (backgroundSky) {
             backgroundSky.setAttribute('src', '#panorama');
             console.log('Preemptively set panorama source on sky element');
@@ -171,19 +170,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set model source
         saraswatiModel.setAttribute('gltf-model', '#idol-model');
         
-       // In your asset-loader.js, modify the model-loaded handler
-saraswatiModel.addEventListener('model-loaded', function(e) {
-    console.log('Main model loaded successfully!');
-    saraswatiModel.setAttribute('visible', 'true');
-    
-    // Set a default scale
-    saraswatiModel.setAttribute('scale', '3 3 3');
-    
-    // Don't set position here - let main.js handle it
-    // saraswatiModel.setAttribute('position', '0 1.5 -2'); // Remove this line
-    
-    assetLoaded('model');
-});
+        saraswatiModel.addEventListener('model-loaded', function(e) {
+            console.log('Main model loaded successfully!');
+            saraswatiModel.setAttribute('visible', 'true');
+            
+            // Set consistent scale
+            saraswatiModel.setAttribute('scale', '3 3 3');
+            
+            // Let position be managed by the ensureModelVisibility function in main.js
+            assetLoaded('model');
+        });
         
         // Model load error handler
         saraswatiModel.addEventListener('model-error', function(e) {
@@ -276,7 +272,7 @@ saraswatiModel.addEventListener('model-loaded', function(e) {
             
             // Initialize particle effects after everything is loaded
             try {
-                if (window.AFRAME.components['particle-system']) {
+                if (window.AFRAME && window.AFRAME.components['particle-system']) {
                     const particles = document.createElement('a-entity');
                     particles.setAttribute('position', '0 1.5 -3');
                     particles.setAttribute('particle-system', 'preset: divine; enabled: true');
