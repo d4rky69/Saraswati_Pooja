@@ -39,7 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function assetLoaded(type) {
-        if (assetStatus[type]) return; // Prevent double-counting
         assetStatus[type] = true;
         assetStatus.loadedAssets++;
         updateProgress();
@@ -47,14 +46,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function assetError(type, error) {
         console.error(`Error loading ${type}:`, error);
-        assetStatus.errors.push({ type, error: error.toString() });
+        assetStatus.errors.push({ type, error });
         assetStatus.hasErrors = true;
-        
-        // Only count as loaded if we haven't already
-        if (!assetStatus[type]) {
-            assetStatus[type] = 'error';
-            assetStatus.loadedAssets++; // Count as processed even if errored
-        }
+        assetStatus.loadedAssets++; // Count as processed even if errored
         
         // Show error in UI
         if (errorMessage) {
@@ -75,117 +69,61 @@ document.addEventListener('DOMContentLoaded', function() {
         updateProgress();
     }
     
-    // Panorama handling
-    const panoramaImg = document.getElementById('panorama');
-    if (panoramaImg) {
-        // Set a timeout to catch if the load event never fires
-        const panoramaTimeout = setTimeout(() => {
-            if (!assetStatus.panorama) {
-                console.warn('Panorama load timeout, using fallback');
-                assetError('panorama', new Error('Load timeout'));
-            }
-        }, 10000);
+    // Panorama handling with better error handling
+    function loadPanorama() {
+        console.log('Loading panorama image...');
+        const panoramaImg = document.getElementById('panorama');
         
-        panoramaImg.addEventListener('load', function() {
+        if (!panoramaImg) {
+            console.warn('Panorama element not found');
+            backgroundSky.setAttribute('color', '#190033'); // Default purple color
+            assetError('panorama', 'Element not found');
+            return;
+        }
+        
+        // Create new image to test loading
+        const testImage = new Image();
+        testImage.onload = function() {
             console.log('Panorama loaded successfully');
-            clearTimeout(panoramaTimeout);
             backgroundSky.setAttribute('src', '#panorama');
             assetLoaded('panorama');
-        });
+        };
         
-        panoramaImg.addEventListener('error', function(e) {
+        testImage.onerror = function(e) {
             console.error('Panorama failed to load, using fallback color');
-            clearTimeout(panoramaTimeout);
-            // Already set a default color in the HTML
+            backgroundSky.setAttribute('color', '#190033'); // Default purple color
             assetError('panorama', e);
-        });
-    } else {
-        console.warn('Panorama element not found');
-        assetError('panorama', new Error('Element not found'));
+        };
+        
+        // Try to load the image
+        testImage.src = panoramaImg.getAttribute('src');
+        
+        // Set timeout for image loading
+        setTimeout(function() {
+            if (!assetStatus.panorama) {
+                console.warn('Panorama load timed out, using fallback color');
+                backgroundSky.setAttribute('color', '#190033'); // Default purple color
+                assetError('panorama', 'Load timeout');
+            }
+        }, 10000);
     }
     
-    // Model loading
-    scene.addEventListener('loaded', function() {
-        console.log('Scene loaded, initializing model loading');
-        
-        // Load main model
-        loadMainModel();
-        
-        // Check audio loading
-        const audioElement = document.getElementById('background-audio');
-        if (audioElement) {
-            // Set a timeout for audio loading
-            const audioTimeout = setTimeout(() => {
-                if (!assetStatus.audio) {
-                    console.warn('Audio load timeout, continuing without audio');
-                    assetLoaded('audio'); // Mark as loaded anyway to proceed
-                }
-            }, 8000);
-            
-            // For browsers that support it, this event fires when audio can be played
-            audioElement.addEventListener('canplaythrough', function onCanPlay() {
-                console.log('Audio can play through now');
-                clearTimeout(audioTimeout);
-                audioElement.removeEventListener('canplaythrough', onCanPlay);
-                assetLoaded('audio');
-            });
-            
-            audioElement.addEventListener('error', function(e) {
-                console.error('Audio failed to load, continuing without audio');
-                clearTimeout(audioTimeout);
-                assetError('audio', e);
-            });
-            
-            // Try to pre-load audio for iOS
-            try {
-                audioElement.load();
-            } catch (e) {
-                console.warn('Audio preload attempt failed:', e);
-            }
-        } else {
-            console.warn('Audio element not found');
-            assetError('audio', new Error('Element not found'));
-        }
-    });
-    
+    // Model loading with improved scaling logic
     function loadMainModel() {
         console.log('Loading main model...');
         
         // Set model source
         saraswatiModel.setAttribute('gltf-model', '#idol-model');
         
-        // Set a timeout for model loading
-        const modelTimeout = setTimeout(() => {
-            if (!assetStatus.model) {
-                console.warn('Model load timed out, trying fallback');
-                loadFallbackModel();
-            }
-        }, 15000);
-        
-        // Model load success handler
+        // Model load success handler with fixed scale approach
         saraswatiModel.addEventListener('model-loaded', function(e) {
             console.log('Main model loaded successfully!');
-            clearTimeout(modelTimeout);
-            saraswatiModel.setAttribute('visible', 'true');
             
-            // Attempt to adjust model scale based on actual size
-            try {
-                const model = e.detail.model;
-                const bbox = new THREE.Box3().setFromObject(model);
-                const size = bbox.getSize(new THREE.Vector3());
-                console.log('Model dimensions:', size);
-                
-                // Adjust scale based on size
-                if (size.x < 0.1 || size.y < 0.1) {
-                    console.log('Model is very small, increasing scale');
-                    saraswatiModel.setAttribute('scale', '80 80 80');
-                } else if (size.x > 10 || size.y > 10) {
-                    console.log('Model is very large, reducing scale');
-                    saraswatiModel.setAttribute('scale', '25 25 25');
-                }
-            } catch (err) {
-                console.error('Error analyzing model dimensions:', err);
-            }
+            // IMPORTANT: Fix for model scaling - use consistent scale
+            // Adjust these values based on your specific model
+            saraswatiModel.setAttribute('scale', '5 5 5');
+            saraswatiModel.setAttribute('position', '0 1.2 -3');
+            saraswatiModel.setAttribute('visible', 'true');
             
             assetLoaded('model');
         });
@@ -193,9 +131,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Model load error handler
         saraswatiModel.addEventListener('model-error', function(e) {
             console.error('Main model failed to load, trying fallback');
-            clearTimeout(modelTimeout);
             loadFallbackModel();
         });
+        
+        // Set a timeout in case model loading hangs
+        setTimeout(function() {
+            if (!assetStatus.model) {
+                console.warn('Model load timed out, trying fallback');
+                loadFallbackModel();
+            }
+        }, 15000);
     }
     
     function loadFallbackModel() {
@@ -205,29 +150,27 @@ document.addEventListener('DOMContentLoaded', function() {
         fallbackModel.setAttribute('gltf-model', '#fallback-model');
         fallbackModel.setAttribute('visible', 'true');
         
-        // Set a timeout for fallback model loading
-        const fallbackTimeout = setTimeout(() => {
-            if (!assetStatus.model) {
-                console.warn('Fallback model timed out, using simple box');
-                createSimpleBox();
-                assetError('model', new Error('Fallback model timeout'));
-            }
-        }, 10000);
-        
         // Fallback model load success
         fallbackModel.addEventListener('model-loaded', function() {
             console.log('Fallback model loaded');
-            clearTimeout(fallbackTimeout);
             assetLoaded('model');
         });
         
         // Fallback model error - use a simple box as last resort
         fallbackModel.addEventListener('model-error', function() {
             console.error('Fallback model also failed, using simple box');
-            clearTimeout(fallbackTimeout);
             createSimpleBox();
-            assetError('model', new Error('All models failed'));
+            assetError('model', 'All models failed');
         });
+        
+        // Another timeout for fallback model
+        setTimeout(function() {
+            if (!assetStatus.model) {
+                console.warn('Fallback model timed out, using simple box');
+                createSimpleBox();
+                assetError('model', 'Fallback model timeout');
+            }
+        }, 10000);
     }
     
     function createSimpleBox() {
@@ -238,9 +181,7 @@ document.addEventListener('DOMContentLoaded', function() {
         box.setAttribute('width', '1');
         box.setAttribute('height', '1.5');
         box.setAttribute('depth', '0.5');
-        box.setAttribute('animation', 'property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear');
         scene.appendChild(box);
-        assetLoaded('model'); // Mark model as loaded with the box fallback
     }
     
     function finalizeLoading() {
@@ -266,18 +207,65 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Initialize particle effects after everything is loaded
                 if (window.AFRAME && window.AFRAME.components['particle-system']) {
-                    try {
-                        const particles = document.createElement('a-entity');
-                        particles.setAttribute('position', '0 1.5 -3');
-                        particles.setAttribute('particle-system', 'preset: divine; enabled: true');
-                        scene.appendChild(particles);
-                    } catch (e) {
-                        console.error('Failed to create particle system:', e);
-                    }
+                    const particles = document.createElement('a-entity');
+                    particles.setAttribute('position', '0 1.5 -3');
+                    particles.setAttribute('particle-system', 'preset: divine; enabled: true');
+                    scene.appendChild(particles);
                 }
             }, 700);
         }, 500);
     }
+    
+    // Start loading process
+    scene.addEventListener('loaded', function() {
+        console.log('Scene loaded, starting asset loading...');
+        
+        // Load panorama
+        loadPanorama();
+        
+        // Load main model
+        loadMainModel();
+        
+        // Check audio loading
+        const audioElement = document.getElementById('background-audio');
+        if (audioElement) {
+            // For browsers that support it, this event fires when audio can be played
+            audioElement.addEventListener('canplaythrough', function onCanPlay() {
+                console.log('Audio can play through now');
+                audioElement.removeEventListener('canplaythrough', onCanPlay);
+                assetLoaded('audio');
+            });
+            
+            audioElement.addEventListener('error', function(e) {
+                console.error('Audio failed to load, continuing without audio');
+                assetError('audio', e);
+            });
+            
+            // Force audio status update after timeout in case events don't fire
+            setTimeout(function() {
+                if (!assetStatus.audio) {
+                    // Check readyState as an alternative to event
+                    if (audioElement.readyState >= 2) {
+                        console.log('Audio appears to be loaded based on readyState');
+                        assetLoaded('audio');
+                    } else {
+                        console.warn('Audio load status unknown, marking as loaded anyway');
+                        assetLoaded('audio');
+                    }
+                }
+            }, 5000);
+            
+            // Try to pre-load audio for iOS
+            try {
+                audioElement.load();
+            } catch (e) {
+                console.warn('Audio preload attempt failed:', e);
+            }
+        } else {
+            console.warn('Audio element not found');
+            assetError('audio', 'Element not found');
+        }
+    });
     
     // Absolute fallback - hide loading screen after maximum wait time
     setTimeout(function() {
