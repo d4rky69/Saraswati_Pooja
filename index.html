@@ -12,7 +12,8 @@
     <!-- A-Frame for 3D/VR/AR -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-    <script src="https://unpkg.com/three@0.149.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="js/particle-system.js"></script>
+    <script src="js/asset-loader.js"></script>
 </head>
 <body>
     <div id="loading-screen">
@@ -22,7 +23,7 @@
             <div class="loader-circle"></div>
         </div>
         <div class="loading-text">SARASWATI POOJA</div>
-        <div class="loading-progress">Loading Experience...</div>
+        <div class="loading-progress">Loading Experience... <span id="progress-percent">0%</span></div>
     </div>
 
     <div id="controls">
@@ -44,20 +45,20 @@
         </button>
     </div>
     
-    <a-scene loading-screen="enabled: false" device-orientation-permission-ui="enabled: true">
+    <a-scene loading-screen="enabled: false" device-orientation-permission-ui="enabled: true" renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true;">
         <!-- Assets preloading -->
-        <a-assets timeout="30000">
+        <a-assets timeout="60000">
             <img id="panorama" src="assets/images/mandap-panorama.jpg" crossorigin="anonymous">
-            <!-- Use local model file instead of Sketchfab URL -->
+            <!-- Local model file -->
             <a-asset-item id="idol-model" src="assets/models/idol.glb"></a-asset-item>
-            <!-- Keep fallback model as backup -->
+            <!-- Fallback model as backup -->
             <a-asset-item id="fallback-model" src="https://cdn.aframe.io/examples/models/duck/duck.gltf" crossorigin="anonymous"></a-asset-item>
             <audio id="background-audio" src="assets/audio/saraswati-chant.mp3" preload="auto"></audio>
             <audio id="click-sound" src="assets/audio/click.mp3" preload="auto"></audio>
         </a-assets>
         
-        <!-- 360 panorama background -->
-        <a-sky src="#panorama" rotation="0 -90 0"></a-sky>
+        <!-- 360 panorama background with fallback color -->
+        <a-sky id="background-sky" color="#190033"></a-sky>
         
         <!-- Saraswati idol model with correct rotation to face camera -->
         <a-entity
@@ -65,8 +66,8 @@
             position="0 1.5 -3"
             rotation="0 270 0"
             scale="50 50 50"
-            gltf-model="#idol-model"
-            animation="property: rotation; from: 0 270 0; to: 0 270 0; loop: true; dur: 30000; easing: linear">
+            animation="property: rotation; from: 0 270 0; to: 0 270 0; loop: true; dur: 30000; easing: linear"
+            visible="false">
         </a-entity>
         
         <!-- Fallback model in case the main model fails -->
@@ -74,7 +75,6 @@
             id="fallback-model-entity"
             position="0 1.5 -3"
             scale="0.01 0.01 0.01"
-            gltf-model="#fallback-model"
             visible="false">
         </a-entity>
         
@@ -84,7 +84,7 @@
         <a-light type="directional" color="#fff" intensity="0.6" position="-1 1 1"></a-light>
         <a-light type="point" color="#fff" intensity="1.0" position="0 2 -3"></a-light>
         
-        <!-- Adjust camera position to be closer -->
+        <!-- Camera setup -->
         <a-entity camera look-controls wasd-controls="enabled: false" position="0 1.6 0">
             <a-entity cursor="fuse: false"
                 position="0 0 -1"
@@ -95,136 +95,5 @@
     </a-scene>
     
     <script src="js/main.js"></script>
-    <script>
-        // Enhanced debugging script
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM content loaded, initializing model debugging...');
-            
-            var scene = document.querySelector('a-scene');
-            var modelEntity = document.querySelector('#saraswati-model');
-            var fallbackModelEntity = document.querySelector('#fallback-model-entity');
-            var loadingScreen = document.querySelector('#loading-screen');
-            var clickSound = document.querySelector('#click-sound');
-            var audioControl = document.getElementById('audio-control');
-            var audioElement = document.getElementById('background-audio');
-            
-            // Show loading screen while models load
-            loadingScreen.style.display = 'flex';
-            
-            // Handle scene loaded
-            scene.addEventListener('loaded', function() {
-                console.log('A-Frame scene has loaded');
-            });
-            
-            // Setup model loading events
-            modelEntity.addEventListener('model-loaded', function(e) {
-                console.log('Model loaded successfully!', e);
-                loadingScreen.style.opacity = '0';
-                setTimeout(function() {
-                    loadingScreen.style.display = 'none';
-                }, 700);
-                
-                // Add click interaction
-                modelEntity.addEventListener('click', function() {
-                    // Play click sound
-                    if (clickSound) clickSound.play();
-                    
-                    // Add a pulse animation on click
-                    const scale = modelEntity.getAttribute('scale');
-                    const originalScale = Object.values(scale).join(' ');
-                    const pulseScale = Object.values(scale).map(v => v * 1.05).join(' ');
-                    
-                    modelEntity.setAttribute('animation__pulse', {
-                        property: 'scale',
-                        from: originalScale,
-                        to: pulseScale,
-                        dur: 300,
-                        easing: 'easeOutQuad',
-                        dir: 'alternate',
-                        loop: 1
-                    });
-                    
-                    // Play background audio
-                    if (audioElement && !audioElement.paused) {
-                        audioElement.pause();
-                        audioControl.innerHTML = '<span class="material-icons">play_arrow</span> Play Mantra';
-                    } else if (audioElement) {
-                        audioElement.play();
-                        audioControl.innerHTML = '<span class="material-icons">pause</span> Pause Mantra';
-                    }
-                });
-                
-                // Adjust model based on loaded dimensions
-                try {
-                    var model = e.detail.model;
-                    console.log('Model loaded with details:', model);
-                    
-                    // Check if model needs scale adjustment
-                    var bbox = new THREE.Box3().setFromObject(model);
-                    var size = bbox.getSize(new THREE.Vector3());
-                    console.log('Model dimensions:', size);
-                    
-                    // Use a much larger scale for very small models
-                    if (size.x < 0.1 || size.y < 0.1) {
-                        console.log('Model is very small, using larger scale');
-                        modelEntity.setAttribute('scale', '15 15 15');
-                    } else if (size.x > 10 || size.y > 10) {
-                        console.log('Model is too large, decreasing scale');
-                        modelEntity.setAttribute('scale', '0.5 0.5 0.5');
-                    }
-                } catch (e) {
-                    console.error('Error adjusting model scale:', e);
-                }
-            });
-            
-            // Handle model error with improved fallback mechanism
-            modelEntity.addEventListener('model-error', function(e) {
-                console.error('Primary model failed to load:', e);
-                
-                // Try fallback model from CDN
-                console.log('Switching to fallback model');
-                modelEntity.setAttribute('gltf-model', '#fallback-model');
-                modelEntity.setAttribute('scale', '0.01 0.01 0.01');
-                
-                // If that also fails, show the fallback box after 3 seconds
-                setTimeout(function() {
-                    if (!modelEntity.getObject3D('mesh')) {
-                        console.log('Fallback model also failed, showing box');
-                        // Create a simple box
-                        var box = document.createElement('a-box');
-                        box.setAttribute('position', '0 1.5 -3');
-                        box.setAttribute('color', '#ff9933');
-                        scene.appendChild(box);
-                    }
-                    loadingScreen.style.opacity = '0';
-                    setTimeout(function() {
-                        loadingScreen.style.display = 'none';
-                    }, 700);
-                }, 3000);
-            });
-            
-            // Audio controls
-            audioControl.addEventListener('click', function() {
-                if (audioElement.paused) {
-                    audioElement.play();
-                    audioControl.innerHTML = '<span class="material-icons">pause</span> Pause Mantra';
-                } else {
-                    audioElement.pause();
-                    audioControl.innerHTML = '<span class="material-icons">play_arrow</span> Play Mantra';
-                }
-            });
-            
-            // Fallback to hide loading screen after timeout
-            setTimeout(function() {
-                if (loadingScreen.style.display !== 'none') {
-                    console.log('Timeout reached, hiding loading screen');
-                    loadingScreen.style.opacity = '0';
-                    setTimeout(function() {
-                        loadingScreen.style.display = 'none';
-                    }, 700);
-                }
-            }, 8000);
-        });
-    </script>
 </body>
 </html>
