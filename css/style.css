@@ -195,25 +195,3 @@ body {
         position: absolute;
     }
 }
-
-/* Add this to your existing CSS file */
-
-/* Error message display */
-.error-message {
-    background-color: rgba(255, 0, 0, 0.2);
-    border: 1px solid rgba(255, 0, 0, 0.5);
-    color: white;
-    padding: 10px 15px;
-    margin-top: 20px;
-    border-radius: 5px;
-    max-width: 80%;
-    text-align: center;
-    display: none;
-}
-
-/* Show loading screen better on iOS */
-@supports (-webkit-touch-callout: none) {
-    #loading-screen {
-        position: absolute;
-    }
-}
