@@ -88,11 +88,26 @@ const panoramaImg = document.getElementById('panorama');
 if (panoramaImg) {
     console.log('Attempting to load panorama from:', panoramaImg.getAttribute('src'));
     
-    panoramaImg.addEventListener('load', function() {
-        console.log('Panorama loaded successfully');
+    // Force set the panorama source
+    const backgroundSky = document.getElementById('background-sky');
+    if (backgroundSky) {
         backgroundSky.setAttribute('src', '#panorama');
+        console.log('Set panorama source on sky element');
+    }
+    
+    // Add a more direct check for panorama loading
+    if (panoramaImg.complete) {
+        console.log('Panorama already loaded');
         assetLoaded('panorama');
-    });
+    } else {
+        panoramaImg.addEventListener('load', function() {
+            console.log('Panorama loaded successfully');
+            if (backgroundSky) {
+                backgroundSky.setAttribute('src', '#panorama');
+            }
+            assetLoaded('panorama');
+        });
+    }
     
     panoramaImg.addEventListener('error', function(e) {
         console.error('Panorama failed to load, using fallback color. Error:', e);
@@ -110,9 +125,9 @@ if (panoramaImg) {
         }
     }, 20000);
 } else {
-        console.warn('Panorama element not found');
-        assetError('panorama', 'Element not found');
-    }
+    console.warn('Panorama element not found');
+    assetError('panorama', 'Element not found');
+}
     
     // Model loading
     scene.addEventListener('loaded', function() {
