@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Saraswati AR Experience</title>
-    <link rel="stylesheet" href="css/style.css">
+    <!-- Use absolute paths for CSS to avoid path issues -->
+    <link rel="stylesheet" href="./css/style.css">
     <!-- Google Fonts - Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <!-- Material Icons -->
@@ -12,8 +13,8 @@
     <!-- A-Frame for 3D/VR/AR -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-    <script src="js/particle-system.js"></script>
-    <script src="js/asset-loader.js"></script>
+    <script src="./js/particle-system.js"></script>
+    <script src="./js/asset-loader.js"></script>
 </head>
 <body>
     <div id="loading-screen">
@@ -49,12 +50,12 @@
     <a-scene loading-screen="enabled: false" device-orientation-permission-ui="enabled: true" renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true;">
         <!-- Assets preloading -->
         <a-assets timeout="20000">
-    <img id="panorama" src="assets/images/mandap-panorama.jpg" crossorigin="anonymous">
+            <img id="panorama" src="./assets/images/mandap-panorama.jpg" crossorigin="anonymous">
             <!-- Local model file -->
-            <a-asset-item id="idol-model" src="assets/models/idol.glb"></a-asset-item>
+            <a-asset-item id="idol-model" src="./assets/models/idol.glb"></a-asset-item>
             <!-- Fallback model as backup -->
             <a-asset-item id="fallback-model" src="https://cdn.aframe.io/examples/models/duck/duck.gltf" crossorigin="anonymous"></a-asset-item>
-            <audio id="background-audio" src="assets/audio/saraswati-chant.mp3" preload="auto"></audio>
+            <audio id="background-audio" src="./assets/audio/saraswati-chant.mp3" preload="auto"></audio>
         </a-assets>
         
         <!-- 360 panorama background with fallback color -->
@@ -94,6 +95,6 @@
         </a-entity>
     </a-scene>
     
-    <script src="js/main.js"></script>
+    <script src="./js/main.js"></script>
 </body>
 </html>
