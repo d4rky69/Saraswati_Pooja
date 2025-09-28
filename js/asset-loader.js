@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
         scene.appendChild(box);
         
         // Add some basic animation to show something is working
-        box.setAttribute('animation', 'property: rotation; to: 0 360 0; loop: true; dur: 10000');
+        box.setAttribute('animation', 'property: rotation; to: 0 270 0; loop: true; dur: 10000');
     }
     
     function finalizeLoading() {
