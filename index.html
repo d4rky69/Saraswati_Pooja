@@ -24,6 +24,7 @@
         </div>
         <div class="loading-text">SARASWATI POOJA</div>
         <div class="loading-progress">Loading Experience... <span id="progress-percent">0%</span></div>
+        <div id="progress-details" class="loading-details"></div>
         <div id="error-message" class="error-message" style="display:none;"></div>
     </div>
 
@@ -48,7 +49,7 @@
     
     <a-scene loading-screen="enabled: false" device-orientation-permission-ui="enabled: true" renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true;">
         <!-- Assets preloading with better error handling -->
-        <a-assets timeout="60000">
+        <a-assets timeout="30000">
             <img id="panorama" src="assets/images/mandap-panorama.jpg" crossorigin="anonymous">
             <!-- Local model file -->
             <a-asset-item id="idol-model" src="assets/models/idol.glb"></a-asset-item>
@@ -103,7 +104,7 @@
     </a-scene>
     
     <!-- Debug console for mobile troubleshooting -->
-    <div id="debug-console" style="display:none; position:fixed; bottom:120px; left:20px; background:rgba(0,0,0,0.7); color:white; padding:10px; font-size:12px; max-width:80%; max-height:30%; overflow-y: auto;">Debug info will appear here...</div>
+    <div id="debug-console" style="display:none; position:fixed; bottom:120px; left:20px; background:rgba(0,0,0,0.7); color:white; padding:10px; font-size:12px; max-width:80%; max-height:30%; overflow:auto; z-index:2000;"></div>
     
     <script>
         // Simple debug helper for mobile devices
