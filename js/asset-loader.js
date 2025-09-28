@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const scene = document.querySelector('a-scene');
     const loadingScreen = document.getElementById('loading-screen');
     const progressPercent = document.getElementById('progress-percent');
+    const errorMessage = document.getElementById('error-message');
     const backgroundSky = document.getElementById('background-sky');
     const saraswatiModel = document.getElementById('saraswati-model');
     const fallbackModel = document.getElementById('fallback-model-entity');
@@ -48,6 +49,23 @@ document.addEventListener('DOMContentLoaded', function() {
         assetStatus.errors.push({ type, error });
         assetStatus.hasErrors = true;
         assetStatus.loadedAssets++; // Count as processed even if errored
+        
+        // Show error in UI
+        if (errorMessage) {
+            if (type === 'audio') {
+                // Audio errors aren't critical, don't show in UI
+                console.warn('Audio failed but experience can continue');
+            } else {
+                errorMessage.textContent = `Error loading ${type}. Using fallback.`;
+                errorMessage.style.display = 'block';
+                
+                // Hide error after 5 seconds
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
         updateProgress();
     }
     
@@ -80,8 +98,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check audio loading
         const audioElement = document.getElementById('background-audio');
         if (audioElement) {
-            audioElement.addEventListener('canplaythrough', function() {
-                console.log('Audio loaded successfully');
+            // For browsers that support it, this event fires when audio can be played
+            audioElement.addEventListener('canplaythrough', function onCanPlay() {
+                console.log('Audio can play through now');
+                audioElement.removeEventListener('canplaythrough', onCanPlay);
                 assetLoaded('audio');
             });
             
@@ -93,10 +113,23 @@ document.addEventListener('DOMContentLoaded', function() {
             // Force audio status update after timeout in case events don't fire
             setTimeout(function() {
                 if (!assetStatus.audio) {
-                    console.warn('Audio load status unknown, marking as loaded');
-                    assetLoaded('audio');
+                    // Check readyState as an alternative to event
+                    if (audioElement.readyState >= 2) {
+                        console.log('Audio appears to be loaded based on readyState');
+                        assetLoaded('audio');
+                    } else {
+                        console.warn('Audio load status unknown, marking as loaded anyway');
+                        assetLoaded('audio');
+                    }
                 }
             }, 5000);
+            
+            // Try to pre-load audio for iOS
+            try {
+                audioElement.load();
+            } catch (e) {
+                console.warn('Audio preload attempt failed:', e);
+            }
         } else {
             console.warn('Audio element not found');
             assetError('audio', 'Element not found');
@@ -195,6 +228,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function finalizeLoading() {
         console.log('Finalizing experience loading');
         
+        // Show any critical errors
+        if (assetStatus.hasErrors && errorMessage) {
+            let criticalErrors = assetStatus.errors.filter(err => err.type !== 'audio');
+            if (criticalErrors.length > 0) {
+                errorMessage.textContent = 'Some assets failed to load. Using fallbacks.';
+                errorMessage.style.display = 'block';
+            }
+        }
+        
         // Add a short delay to ensure everything is rendered
         setTimeout(function() {
             console.log('Hiding loading screen');
@@ -205,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Experience fully loaded and ready');
                 
                 // Initialize particle effects after everything is loaded
-                if (window.AFRAME.components['particle-system']) {
+                if (window.AFRAME && window.AFRAME.components['particle-system']) {
                     const particles = document.createElement('a-entity');
                     particles.setAttribute('position', '0 1.5 -3');
                     particles.setAttribute('particle-system', 'preset: divine; enabled: true');
