@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadingScreen = document.getElementById('loading-screen');
     const audioControl = document.getElementById('audio-control');
     const audioElement = document.getElementById('background-audio');
-    const audioIcon = audioControl ? audioControl.querySelector('.material-icons') : null;
+    const clickSound = document.getElementById('click-sound');
     let audioPlaying = false;
     
     // Make sure scene is visible
@@ -52,7 +52,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         })
                         .catch(error => {
                             console.error('Audio playback failed:', error);
-                            // Show user-friendly error message
                             alert('Could not play audio. Please interact with the page first or check if audio is supported.');
                         });
                     }
@@ -61,11 +60,35 @@ document.addEventListener('DOMContentLoaded', function() {
                     audioControl.innerHTML = '<span class="material-icons">play_arrow</span> Play Mantra';
                     audioPlaying = false;
                 }
+                
+                // Try to play click sound
+                if (clickSound) {
+                    clickSound.currentTime = 0;
+                    clickSound.play().catch(err => console.log('Click sound failed to play:', err));
+                }
             } catch (e) {
                 console.error('Error controlling audio:', e);
             }
         });
     }
+    
+    // IMPORTANT: This function ensures the model is properly positioned and visible
+    const ensureModelVisibility = function() {
+        const idolModel = document.querySelector('#saraswati-model');
+        if (idolModel) {
+            // Make sure it's visible
+            idolModel.setAttribute('visible', 'true');
+            
+            // Single consistent position - centered in the scene
+            // We're not using different positions for mobile/desktop to avoid conflicts
+            idolModel.setAttribute('position', '0 1.5 -3');
+            
+            // Ensure rotation faces the camera
+            idolModel.setAttribute('rotation', '0 180 0');
+            
+            console.log('Model visibility, position and rotation updated');
+        }
+    };
     
     // Add interactive behavior to the model with better error handling
     scene.addEventListener('loaded', () => {
@@ -76,6 +99,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadingScreen.style.display = 'none';
             }, 500);
         }
+
+        // Call our model positioning function
+        ensureModelVisibility();
 
         setTimeout(() => {
             try {
@@ -112,7 +138,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 loop: 1
                             });
                             
-                            // Play audio if not already playing
+                            // Play click sound
+                            if (clickSound) {
+                                clickSound.currentTime = 0;
+                                clickSound.play().catch(err => console.log('Click sound failed to play:', err));
+                            }
+                            
+                            // Play background audio if not already playing
                             if (audioElement && !audioPlaying) {
                                 audioElement.play()
                                     .then(() => {
@@ -135,7 +167,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     fallbackModel.addEventListener('click', function() {
                         console.log('Fallback model clicked');
                         
-                        // Play audio if not already playing
+                        // Play click sound
+                        if (clickSound) {
+                            clickSound.currentTime = 0;
+                            clickSound.play().catch(err => console.log('Click sound failed to play:', err));
+                        }
+                        
+                        // Play background audio if not already playing
                         if (audioElement && !audioPlaying) {
                             audioElement.play()
                                 .then(() => {
@@ -155,7 +193,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     box.addEventListener('click', function() {
                         console.log('Box clicked');
                         
-                        // Play audio if not already playing
+                        // Play click sound
+                        if (clickSound) {
+                            clickSound.currentTime = 0;
+                            clickSound.play().catch(err => console.log('Click sound failed to play:', err));
+                        }
+                        
+                        // Play background audio if not already playing
                         if (audioElement && !audioPlaying) {
                             audioElement.play()
                                 .then(() => {
@@ -174,28 +218,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     });
     
-    // Adjust model position for mobile/desktop
-    function adjustForDevice() {
-        try {
-            const idolModel = document.querySelector('#saraswati-model');
-            if (!idolModel) return;
-            
-            if (window.innerWidth < 768) {
-                // Mobile positioning - bring closer and adjust size
-                idolModel.setAttribute('position', '0 1.0 -2');
-            } else {
-                // Desktop positioning
-                idolModel.setAttribute('position', '0 1.5 -3');
-            }
-        } catch (e) {
-            console.error('Error adjusting for device:', e);
-        }
-    }
-    
-    // Run once and add event listener for resize
-    window.addEventListener('resize', adjustForDevice);
-    scene.addEventListener('loaded', adjustForDevice);
-    
     // Force hide the loading screen after a reasonable timeout
     setTimeout(function() {
         if (loadingScreen && window.getComputedStyle(loadingScreen).display !== 'none') {
@@ -205,42 +227,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadingScreen.style.display = 'none';
             }, 500);
         }
+        
+        // Call ensureModelVisibility again after everything has settled
+        ensureModelVisibility();
     }, 12000);
-   // Replace the ensureModelVisibility function with this updated version
-const ensureModelVisibility = function() {
-    const idolModel = document.querySelector('#saraswati-model');
-    if (idolModel) {
-        // Make sure it's visible
-        idolModel.setAttribute('visible', 'true');
-        
-        // Position directly in front of camera with proper Y value
-        if (window.innerWidth < 768) {
-            // Mobile - centered and closer
-            idolModel.setAttribute('position', '0 1.2 -2');
-        } else {
-            // Desktop - centered position
-            idolModel.setAttribute('position', '0 1.5 -2.5');
-        }
-        
-        // Set proper rotation to face camera directly
-        // Y rotation of 180 degrees will make the model face forward
-        idolModel.setAttribute('rotation', '0 180 0');
-        
-        console.log('Model visibility, position and rotation updated');
-    }
-};
     
-    // Call it when scene is loaded and again after a short delay to ensure it takes effect
-    scene.addEventListener('loaded', ensureModelVisibility);
-    setTimeout(ensureModelVisibility, 2000);
+    // Call ensureModelVisibility once more on window resize
+    window.addEventListener('resize', ensureModelVisibility);
 });
-// Add this to main.js for debugging
-function addDebugMarker() {
-    const scene = document.querySelector('a-scene');
-    const marker = document.createElement('a-sphere');
-    marker.setAttribute('position', '0 1.5 -2.5'); // Same as where model should be
-    marker.setAttribute('radius', '0.1');
-    marker.setAttribute('color', 'red');
-    scene.appendChild(marker);
-}
-// Call this function during development to see where the center is
