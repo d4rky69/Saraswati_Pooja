@@ -2,6 +2,17 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Initializing asset loader...');
     
+    // Manually preload panorama
+    const preloadPanorama = new Image();
+    preloadPanorama.src = 'assets/images/mandap-panorama.jpg';
+    preloadPanorama.onload = function() {
+        console.log('Panorama manually preloaded successfully');
+        const backgroundSky = document.getElementById('background-sky');
+        if (backgroundSky) {
+            backgroundSky.setAttribute('src', '#panorama');
+        }
+    };
+    
     // Debug mode
     const DEBUG = false;
     
@@ -15,6 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
         hasErrors: false,
         errors: []
     };
+    
+    // Rest of the existing code...
     
     // Elements
     const scene = document.querySelector('a-scene');
