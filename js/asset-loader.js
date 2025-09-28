@@ -2,17 +2,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Initializing asset loader...');
     
-    // Manually preload panorama
-    const preloadPanorama = new Image();
-    preloadPanorama.src = 'assets/images/mandap-panorama.jpg';
-    preloadPanorama.onload = function() {
-        console.log('Panorama manually preloaded successfully');
-        const backgroundSky = document.getElementById('background-sky');
-        if (backgroundSky) {
-            backgroundSky.setAttribute('src', '#panorama');
-        }
-    };
-    
     // Debug mode
     const DEBUG = false;
     
@@ -26,8 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
         hasErrors: false,
         errors: []
     };
-    
-    // Rest of the existing code...
     
     // Elements
     const scene = document.querySelector('a-scene');
@@ -83,51 +70,58 @@ document.addEventListener('DOMContentLoaded', function() {
         updateProgress();
     }
     
-    // Panorama handling
-const panoramaImg = document.getElementById('panorama');
-if (panoramaImg) {
-    console.log('Attempting to load panorama from:', panoramaImg.getAttribute('src'));
-    
-    // Force set the panorama source
-    const backgroundSky = document.getElementById('background-sky');
-    if (backgroundSky) {
-        backgroundSky.setAttribute('src', '#panorama');
-        console.log('Set panorama source on sky element');
-    }
-    
-    // Add a more direct check for panorama loading
-    if (panoramaImg.complete) {
-        console.log('Panorama already loaded');
-        assetLoaded('panorama');
-    } else {
-        panoramaImg.addEventListener('load', function() {
+    // Improved panorama handling
+    const panoramaImg = document.getElementById('panorama');
+    if (panoramaImg) {
+        console.log('Setting up panorama loader:', panoramaImg.getAttribute('src'));
+        
+        // IMPORTANT: Set the sky src BEFORE waiting for load event
+        const backgroundSky = document.getElementById('background-sky');
+        if (backgroundSky) {
+            backgroundSky.setAttribute('src', '#panorama');
+            console.log('Preemptively set panorama source on sky element');
+        }
+        
+        // Create a separate Image object to monitor loading
+        const imgLoader = new Image();
+        imgLoader.crossOrigin = "anonymous";
+        imgLoader.src = panoramaImg.getAttribute('src');
+        
+        imgLoader.onload = function() {
             console.log('Panorama loaded successfully');
+            // Ensure the sky has the panorama
             if (backgroundSky) {
                 backgroundSky.setAttribute('src', '#panorama');
+                console.log('Confirmed panorama set on sky');
             }
             assetLoaded('panorama');
-        });
+        };
+        
+        imgLoader.onerror = function(e) {
+            console.error('Panorama failed to load, using fallback color. Error:', e);
+            // Use a more visible default color
+            if (backgroundSky) {
+                backgroundSky.removeAttribute('src');
+                backgroundSky.setAttribute('color', '#2A0A4A');
+            }
+            assetError('panorama', e);
+        };
+        
+        // Increased timeout from 10s to 20s for larger images
+        setTimeout(function() {
+            if (!assetStatus.panorama) {
+                console.warn('Panorama load timed out, using fallback');
+                if (backgroundSky) {
+                    backgroundSky.removeAttribute('src');
+                    backgroundSky.setAttribute('color', '#2A0A4A');
+                }
+                assetLoaded('panorama');
+            }
+        }, 20000);
+    } else {
+        console.warn('Panorama element not found');
+        assetError('panorama', 'Element not found');
     }
-    
-    panoramaImg.addEventListener('error', function(e) {
-        console.error('Panorama failed to load, using fallback color. Error:', e);
-        // Use a more visible default color
-        backgroundSky.setAttribute('color', '#2A0A4A');
-        assetError('panorama', e);
-    });
-    
-    // Increased timeout from 10s to 20s for larger images
-    setTimeout(function() {
-        if (!assetStatus.panorama) {
-            console.warn('Panorama load timed out, using fallback');
-            backgroundSky.setAttribute('color', '#2A0A4A');
-            assetLoaded('panorama');
-        }
-    }, 20000);
-} else {
-    console.warn('Panorama element not found');
-    assetError('panorama', 'Element not found');
-}
     
     // Model loading
     scene.addEventListener('loaded', function() {
@@ -177,16 +171,16 @@ if (panoramaImg) {
         // Set model source
         saraswatiModel.setAttribute('gltf-model', '#idol-model');
         
-      // Model load success handler
-saraswatiModel.addEventListener('model-loaded', function(e) {
-    console.log('Main model loaded successfully!');
-    saraswatiModel.setAttribute('visible', 'true');
-    
-    // Set a default scale in case size detection fails
-    saraswatiModel.setAttribute('scale', '3 3 3'); // CHANGED from 50 50 50 to 3 3 3
-    
-    assetLoaded('model');
-});
+        // Model load success handler
+        saraswatiModel.addEventListener('model-loaded', function(e) {
+            console.log('Main model loaded successfully!');
+            saraswatiModel.setAttribute('visible', 'true');
+            
+            // Set a default scale
+            saraswatiModel.setAttribute('scale', '3 3 3');
+            
+            assetLoaded('model');
+        });
         
         // Model load error handler
         saraswatiModel.addEventListener('model-error', function(e) {
@@ -297,5 +291,5 @@ saraswatiModel.addEventListener('model-loaded', function(e) {
             console.warn('Maximum wait time reached, forcing experience to start');
             finalizeLoading();
         }
-    }, 15000); // Reduced from 30s to 15s for quicker fallback
+    }, 15000);
 });
