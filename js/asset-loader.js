@@ -2,6 +2,9 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Initializing asset loader...');
     
+    // Debug mode
+    const DEBUG = false;
+    
     // Track loading assets
     const assetStatus = {
         panorama: false,
@@ -17,9 +20,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const scene = document.querySelector('a-scene');
     const loadingScreen = document.getElementById('loading-screen');
     const progressPercent = document.getElementById('progress-percent');
+    const forceStartButton = document.getElementById('force-start');
     const backgroundSky = document.getElementById('background-sky');
     const saraswatiModel = document.getElementById('saraswati-model');
     const fallbackModel = document.getElementById('fallback-model-entity');
+    
+    // Show force start button after a delay
+    setTimeout(() => {
+        if (forceStartButton) {
+            forceStartButton.style.display = 'block';
+        }
+    }, 10000);
+
+    // Add force start button event listener
+    if (forceStartButton) {
+        forceStartButton.addEventListener('click', function() {
+            console.log('Force starting experience');
+            finalizeLoading();
+        });
+    }
     
     // Load tracking
     function updateProgress() {
@@ -62,9 +81,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         panoramaImg.addEventListener('error', function(e) {
             console.error('Panorama failed to load, using fallback color');
-            // Already set a default color in the HTML
+            // Use a more visible default color
+            backgroundSky.setAttribute('color', '#2A0A4A');
             assetError('panorama', e);
         });
+        
+        // Force panorama status after timeout
+        setTimeout(function() {
+            if (!assetStatus.panorama) {
+                console.warn('Panorama load timed out, using fallback');
+                backgroundSky.setAttribute('color', '#2A0A4A');
+                assetLoaded('panorama');
+            }
+        }, 10000);
     } else {
         console.warn('Panorama element not found');
         assetError('panorama', 'Element not found');
@@ -73,6 +102,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Model loading
     scene.addEventListener('loaded', function() {
         console.log('Scene loaded, initializing model loading');
+        
+        // Create debug display if needed
+        if (DEBUG) {
+            const debugInfo = document.createElement('div');
+            debugInfo.className = 'debug-info';
+            debugInfo.textContent = 'Scene loaded';
+            document.body.appendChild(debugInfo);
+            debugInfo.style.display = 'block';
+        }
         
         // Load main model
         loadMainModel();
@@ -114,24 +152,8 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Main model loaded successfully!');
             saraswatiModel.setAttribute('visible', 'true');
             
-            // Attempt to adjust model scale based on actual size
-            try {
-                const model = e.detail.model;
-                const bbox = new THREE.Box3().setFromObject(model);
-                const size = bbox.getSize(new THREE.Vector3());
-                console.log('Model dimensions:', size);
-                
-                // Adjust scale based on size
-                if (size.x < 0.1 || size.y < 0.1) {
-                    console.log('Model is very small, increasing scale');
-                    saraswatiModel.setAttribute('scale', '80 80 80');
-                } else if (size.x > 10 || size.y > 10) {
-                    console.log('Model is very large, reducing scale');
-                    saraswatiModel.setAttribute('scale', '25 25 25');
-                }
-            } catch (err) {
-                console.error('Error analyzing model dimensions:', err);
-            }
+            // Set a default scale in case size detection fails
+            saraswatiModel.setAttribute('scale', '50 50 50');
             
             assetLoaded('model');
         });
@@ -148,15 +170,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.warn('Model load timed out, trying fallback');
                 loadFallbackModel();
             }
-        }, 15000);
+        }, 10000);
     }
     
     function loadFallbackModel() {
         console.log('Loading fallback model...');
         
+        // Hide the main model since it failed
+        saraswatiModel.setAttribute('visible', 'false');
+        
         // Try the fallback model
         fallbackModel.setAttribute('gltf-model', '#fallback-model');
         fallbackModel.setAttribute('visible', 'true');
+        fallbackModel.setAttribute('scale', '0.5 0.5 0.5');  // Larger scale for visibility
         
         // Fallback model load success
         fallbackModel.addEventListener('model-loaded', function() {
@@ -178,11 +204,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 createSimpleBox();
                 assetError('model', 'Fallback model timeout');
             }
-        }, 10000);
+        }, 5000);
     }
     
     function createSimpleBox() {
         console.log('Creating simple box as final fallback');
+        fallbackModel.setAttribute('visible', 'false');
+        
         const box = document.createElement('a-box');
         box.setAttribute('position', '0 1.5 -3');
         box.setAttribute('color', '#ff9933');
@@ -190,28 +218,46 @@ document.addEventListener('DOMContentLoaded', function() {
         box.setAttribute('height', '1.5');
         box.setAttribute('depth', '0.5');
         scene.appendChild(box);
+        
+        // Add some basic animation to show something is working
+        box.setAttribute('animation', 'property: rotation; to: 0 360 0; loop: true; dur: 10000');
     }
     
     function finalizeLoading() {
         console.log('Finalizing experience loading');
         
-        // Add a short delay to ensure everything is rendered
+        // Force assets to complete loading if they haven't already
+        if (!assetStatus.panorama) assetLoaded('panorama');
+        if (!assetStatus.model) {
+            createSimpleBox();
+            assetLoaded('model');
+        }
+        if (!assetStatus.audio) assetLoaded('audio');
+        
+        // Hide loading screen immediately
+        loadingScreen.style.opacity = '0';
+        
         setTimeout(function() {
-            console.log('Hiding loading screen');
-            loadingScreen.style.opacity = '0';
+            loadingScreen.style.display = 'none';
+            console.log('Experience fully loaded and ready');
             
-            setTimeout(function() {
-                loadingScreen.style.display = 'none';
-                console.log('Experience fully loaded and ready');
-                
-                // Initialize particle effects after everything is loaded
+            // Make sure the scene is visible
+            if (scene) {
+                scene.style.visibility = 'visible';
+                scene.style.opacity = '1';
+            }
+            
+            // Initialize particle effects after everything is loaded
+            try {
                 if (window.AFRAME.components['particle-system']) {
                     const particles = document.createElement('a-entity');
                     particles.setAttribute('position', '0 1.5 -3');
                     particles.setAttribute('particle-system', 'preset: divine; enabled: true');
                     scene.appendChild(particles);
                 }
-            }, 700);
+            } catch (e) {
+                console.error('Failed to initialize particles:', e);
+            }
         }, 500);
     }
     
@@ -219,16 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
         if (loadingScreen.style.display !== 'none') {
             console.warn('Maximum wait time reached, forcing experience to start');
-            
-            // Force status completion for any remaining assets
-            if (!assetStatus.panorama) assetLoaded('panorama');
-            if (!assetStatus.model) {
-                createSimpleBox();
-                assetLoaded('model');
-            }
-            if (!assetStatus.audio) assetLoaded('audio');
-            
             finalizeLoading();
         }
-    }, 30000);
+    }, 15000); // Reduced from 30s to 15s for quicker fallback
 });
