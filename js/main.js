@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Set the initial state based on whether audio is actually playing
-        audioPlaying = !audioElement.paused && !audioElement.ended && audioElement.currentTime > 0;
+        audioPlaying = !audioElement.paused;
         updateAudioButtonUI();
         
         // Check if audio is actually loaded
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             audioElement.addEventListener('error', function(e) {
                 console.error('Audio file failed to load:', e);
-                // Don't alert - just show in console
+                alert('Could not load audio file. Please check your connection.');
             });
         }
     }
@@ -45,10 +45,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (audioPlaying) {
             audioControl.innerHTML = '<span class="material-icons">pause</span> Pause Mantra';
-            audioControl.style.background = 'linear-gradient(135deg, #138808, #0c5d06)'; // Green when playing
         } else {
             audioControl.innerHTML = '<span class="material-icons">play_arrow</span> Play Mantra';
-            audioControl.style.background = 'linear-gradient(135deg, #ff9933, #ff8000)'; // Orange when paused
         }
     }
     
@@ -62,11 +60,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     // First, make sure audio is at the beginning if it finished playing
                     if (audioElement.ended) {
                         audioElement.currentTime = 0;
-                    }
-                    
-                    // For iOS specifically, need to load first
-                    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                        audioElement.load();
                     }
                     
                     console.log('Attempting to play audio...');
@@ -83,9 +76,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             // Special handling for common errors
                             if (error.name === 'NotAllowedError') {
-                                // Don't alert - just update in console
-                                console.log('Browser blocked audio. Try clicking again after interacting with page.');
-                                unlockAudio(); // Try to unlock
+                                alert('Browser blocked audio playback. Please interact with the page first.');
+                            } else if (error.name === 'NotSupportedError') {
+                                alert('Audio format not supported by your browser.');
+                            } else {
+                                alert('Could not play audio: ' + error.message);
                             }
                             
                             audioPlaying = false;
@@ -100,6 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (e) {
                 console.error('Error controlling audio:', e);
+                alert('An error occurred while trying to control audio playback.');
                 audioPlaying = false;
                 updateAudioButtonUI();
             }
@@ -110,47 +106,40 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Audio playback ended');
             audioPlaying = false;
             updateAudioButtonUI();
-            
-            // Auto-replay
-            setTimeout(() => {
-                if (audioElement) {
-                    audioElement.currentTime = 0;
-                    audioElement.play()
-                        .then(() => {
-                            audioPlaying = true;
-                            updateAudioButtonUI();
-                        })
-                        .catch(err => {
-                            console.warn('Auto-replay failed:', err);
-                        });
-                }
-            }, 2000);
         });
     }
     
-    // Function to unlock audio on iOS
-    function unlockAudio() {
-        if (!audioElement) return;
+    // Add scale controls for the model
+    function addScaleControls() {
+        const saraswatiModel = document.querySelector('#saraswati-model');
+        if (!saraswatiModel) return;
         
-        // Create and play a silent audio element
-        const silentSound = document.createElement('audio');
-        silentSound.setAttribute('src', 'data:audio/mp3;base64,SUQzAwAAAAAAJlRQRTEAAAAcAAAAU291bmRKYXkuY29tIFNvdW5kIEVmZmVjdHMA//tAwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAACAAABQAB/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3//////////////////////////////////////////////////AAAAAExhdmM1OC45MS4xMDAAAAAAAAAAAAAAAP/7UMQAAEiC3VlTEEQs1X7hLQhCkH8+gAAk2GRkQAAAwBgGAQBgYBgIAgABgGAYDAYA4Dv4xkf/yfg7/4xk//5P/h38f9/n/j4D8H4P//+IAIYIQhCEIQhCACAIAgCMwQhCEAA');
-        silentSound.setAttribute('playsinline', '');
-        silentSound.setAttribute('preload', 'auto');
-        document.body.appendChild(silentSound);
-        
-        const promise = silentSound.play();
-        if (promise !== undefined) {
-            promise.then(() => {
-                // Remove after playing
-                silentSound.remove();
-                console.log('Audio unlocked successfully');
-            }).catch(err => {
-                // Remove even if failed
-                silentSound.remove();
-                console.log('Audio unlock failed:', err);
-            });
-        }
+        // Add key controls for debugging scale
+        document.addEventListener('keydown', function(e) {
+            if (!saraswatiModel) return;
+            
+            const currentScale = saraswatiModel.getAttribute('scale');
+            let x = currentScale.x || 5;
+            let y = currentScale.y || 5;
+            let z = currentScale.z || 5;
+            
+            // + key increases scale
+            if (e.key === '+' || e.key === '=') {
+                x *= 1.2;
+                y *= 1.2;
+                z *= 1.2;
+                saraswatiModel.setAttribute('scale', {x, y, z});
+                console.log('Increased scale to:', x, y, z);
+            }
+            // - key decreases scale
+            else if (e.key === '-' || e.key === '_') {
+                x /= 1.2;
+                y /= 1.2;
+                z /= 1.2;
+                saraswatiModel.setAttribute('scale', {x, y, z});
+                console.log('Decreased scale to:', x, y, z);
+            }
+        });
     }
     
     // Add interactive behavior to the model with better error handling
@@ -184,21 +173,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     dir: 'alternate',
                                     loop: 1
                                 });
-                                
-                                // Create divine particles on click
-                                if (window.AFRAME.components['particle-system']) {
-                                    const particles = document.createElement('a-entity');
-                                    particles.setAttribute('position', this.getAttribute('position'));
-                                    particles.setAttribute('particle-system', 'preset: divine; enabled: true; particleCount: 100');
-                                    scene.appendChild(particles);
-                                    
-                                    // Remove after animation completes
-                                    setTimeout(() => {
-                                        if (particles.parentNode) {
-                                            particles.parentNode.removeChild(particles);
-                                        }
-                                    }, 3000);
-                                }
                             }
                             
                             // Play audio if not already playing
@@ -209,7 +183,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                         updateAudioButtonUI();
                                     })
                                     .catch(err => {
-                                        console.warn('Could not play audio on click:', err);
+                                        console.error('Could not play audio on click:', err);
+                                        // Do not show alert here as it would be annoying on model click
                                     });
                             }
                         } catch (e) {
@@ -231,10 +206,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                     audioPlaying = true;
                                     updateAudioButtonUI();
                                 })
-                                .catch(err => console.warn('Could not play audio on fallback click:', err));
+                                .catch(err => console.error('Could not play audio on fallback click:', err));
                         }
                     });
                 }
+                
+                // Add scale controls for debugging
+                addScaleControls();
+                
             } catch (e) {
                 console.error('Error setting up model interactions:', e);
             }
@@ -245,36 +224,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function adjustForDevice() {
         try {
             const idolModel = document.querySelector('#saraswati-model');
-            const fallbackModel = document.querySelector('#fallback-model-entity');
+            if (!idolModel) return;
             
-            // Adjust main model
-            if (idolModel) {
-                if (window.innerWidth < 768) {
-                    // Mobile positioning - bring closer and adjust size
-                    idolModel.setAttribute('position', '0 1.0 -2');
-                    const currentScale = idolModel.getAttribute('scale');
-                    if (currentScale) {
-                        const scaleValue = typeof currentScale === 'string' 
-                            ? currentScale.split(' ').map(Number)
-                            : [currentScale.x, currentScale.y, currentScale.z];
-                        
-                        const mobileScale = scaleValue.map(v => v * 0.8).join(' ');
-                        idolModel.setAttribute('scale', mobileScale);
-                    }
-                } else {
-                    // Desktop positioning
-                    idolModel.setAttribute('position', '0 1.5 -3');
-                    // Scale is set by asset-loader.js based on model dimensions
-                }
-            }
-            
-            // Also adjust fallback model
-            if (fallbackModel) {
-                if (window.innerWidth < 768) {
-                    fallbackModel.setAttribute('position', '0 1.0 -2');
-                } else {
-                    fallbackModel.setAttribute('position', '0 1.5 -3');
-                }
+            if (window.innerWidth < 768) {
+                // Mobile positioning - bring closer and adjust size
+                idolModel.setAttribute('position', '0 1.0 -2');
+                idolModel.setAttribute('scale', '3 3 3'); // Smaller scale for mobile
+            } else {
+                // Desktop positioning
+                idolModel.setAttribute('position', '0 1.2 -3');
+                idolModel.setAttribute('scale', '5 5 5'); // Default scale for desktop
             }
         } catch (e) {
             console.error('Error adjusting for device:', e);
@@ -282,26 +241,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Unlock audio on first user interaction with the page
-    function unlockAudioOnInteraction() {
+    document.addEventListener('click', function unlockAudio() {
         if (audioElement) {
             console.log('User interaction detected, trying to unlock audio...');
-            unlockAudio();
+            
+            // Just try to play and immediately pause
+            const silentPlay = audioElement.play();
+            if (silentPlay !== undefined) {
+                silentPlay.then(() => {
+                    audioElement.pause();
+                    audioElement.currentTime = 0;
+                    console.log('Audio unlocked successfully');
+                }).catch(err => {
+                    console.log('Audio unlock failed, will try again on button click', err);
+                });
+            }
         }
         // Only need this once
-        document.removeEventListener('click', unlockAudioOnInteraction);
-        document.removeEventListener('touchstart', unlockAudioOnInteraction);
-    }
-    
-    // Add multiple event listeners for better mobile support
-    document.addEventListener('click', unlockAudioOnInteraction, { once: true });
-    document.addEventListener('touchstart', unlockAudioOnInteraction, { once: true });
+        document.removeEventListener('click', unlockAudio);
+    }, { once: true });
     
     // Run once and add event listener for resize
     window.addEventListener('resize', adjustForDevice);
+    scene.addEventListener('loaded', adjustForDevice);
     
-    // Initialize audio and device adjustments after scene loaded
-    scene.addEventListener('loaded', function() {
-        adjustForDevice();
-        setTimeout(initializeAudio, 1000);
-    });
+    // Initialize audio after a short delay to ensure elements are loaded
+    setTimeout(initializeAudio, 1000);
 });
