@@ -24,6 +24,7 @@
         </div>
         <div class="loading-text">SARASWATI POOJA</div>
         <div class="loading-progress">Loading Experience... <span id="progress-percent">0%</span></div>
+        <button id="force-start">Enter Experience Now</button>
     </div>
 
     <div id="controls">
@@ -47,14 +48,13 @@
     
     <a-scene loading-screen="enabled: false" device-orientation-permission-ui="enabled: true" renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true;">
         <!-- Assets preloading -->
-        <a-assets timeout="60000">
+        <a-assets timeout="15000">
             <img id="panorama" src="assets/images/mandap-panorama.jpg" crossorigin="anonymous">
             <!-- Local model file -->
             <a-asset-item id="idol-model" src="assets/models/idol.glb"></a-asset-item>
             <!-- Fallback model as backup -->
             <a-asset-item id="fallback-model" src="https://cdn.aframe.io/examples/models/duck/duck.gltf" crossorigin="anonymous"></a-asset-item>
             <audio id="background-audio" src="assets/audio/saraswati-chant.mp3" preload="auto"></audio>
-            <audio id="click-sound" src="assets/audio/click.mp3" preload="auto"></audio>
         </a-assets>
         
         <!-- 360 panorama background with fallback color -->
@@ -66,7 +66,7 @@
             position="0 1.5 -3"
             rotation="0 270 0"
             scale="50 50 50"
-            animation="property: rotation; from: 0 270 0; to: 0 270 0; loop: true; dur: 30000; easing: linear"
+            animation="property: rotation; from: 0 270 0; to: 0 630 0; loop: true; dur: 30000; easing: linear"
             visible="false">
         </a-entity>
         
@@ -74,15 +74,15 @@
         <a-entity
             id="fallback-model-entity"
             position="0 1.5 -3"
-            scale="0.01 0.01 0.01"
+            scale="0.5 0.5 0.5"
             visible="false">
         </a-entity>
         
         <!-- Enhanced lighting for better visibility -->
-        <a-light type="ambient" color="#fff" intensity="1.2"></a-light>
-        <a-light type="directional" color="#fff" intensity="0.8" position="1 1 1" target="#saraswati-model" castShadow="true"></a-light>
-        <a-light type="directional" color="#fff" intensity="0.6" position="-1 1 1"></a-light>
-        <a-light type="point" color="#fff" intensity="1.0" position="0 2 -3"></a-light>
+        <a-light type="ambient" color="#fff" intensity="1.5"></a-light>
+        <a-light type="directional" color="#fff" intensity="1.0" position="1 1 1"></a-light>
+        <a-light type="directional" color="#fff" intensity="0.8" position="-1 1 1"></a-light>
+        <a-light type="point" color="#fff" intensity="1.2" position="0 2 -3"></a-light>
         
         <!-- Camera setup -->
         <a-entity camera look-controls wasd-controls="enabled: false" position="0 1.6 0">
