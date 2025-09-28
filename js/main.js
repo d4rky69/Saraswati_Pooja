@@ -6,6 +6,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const audioIcon = audioControl ? audioControl.querySelector('.material-icons') : null;
     let audioPlaying = false;
     
+    // Make sure scene is visible
+    if (scene) {
+        scene.style.visibility = 'visible';
+        scene.style.opacity = '1';
+    }
+    
     // Audio controls with better error handling
     if (audioControl && audioElement) {
         audioControl.addEventListener('click', function() {
@@ -15,7 +21,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     if (playPromise !== undefined) {
                         playPromise.then(() => {
-                            audioIcon.textContent = 'pause';
                             audioControl.innerHTML = '<span class="material-icons">pause</span> Pause Mantra';
                             audioPlaying = true;
                         })
@@ -27,7 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 } else {
                     audioElement.pause();
-                    audioIcon.textContent = 'play_arrow';
                     audioControl.innerHTML = '<span class="material-icons">play_arrow</span> Play Mantra';
                     audioPlaying = false;
                 }
@@ -39,36 +43,38 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add interactive behavior to the model with better error handling
     scene.addEventListener('loaded', () => {
+        // Force loading screen to hide if still visible
+        if (loadingScreen && loadingScreen.style.display !== 'none') {
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+            }, 500);
+        }
+
         setTimeout(() => {
             try {
                 const idolModel = document.querySelector('#saraswati-model');
                 
-                if (idolModel) {
+                if (idolModel && idolModel.getAttribute('visible') === 'true') {
                     console.log('Adding click interaction to model');
                     idolModel.addEventListener('click', function(evt) {
                         console.log('Model clicked');
                         
                         try {
                             // Create pulse animation
-                            const currentScale = this.getAttribute('scale');
-                            if (currentScale) {
-                                const scaleValue = typeof currentScale === 'string' 
-                                    ? currentScale.split(' ').map(Number)
-                                    : [currentScale.x, currentScale.y, currentScale.z];
-                                
-                                const newScale = scaleValue.map(v => v * 1.1).join(' ');
-                                const originalScale = scaleValue.join(' ');
-                                
-                                this.setAttribute('animation__pulse', {
-                                    property: 'scale',
-                                    from: originalScale,
-                                    to: newScale,
-                                    dur: 300,
-                                    easing: 'easeOutQuad',
-                                    dir: 'alternate',
-                                    loop: 1
-                                });
-                            }
+                            const scaleValue = [50, 50, 50]; // Default scale
+                            const newScale = scaleValue.map(v => v * 1.1).join(' ');
+                            const originalScale = scaleValue.join(' ');
+                            
+                            this.setAttribute('animation__pulse', {
+                                property: 'scale',
+                                from: originalScale,
+                                to: newScale,
+                                dur: 300,
+                                easing: 'easeOutQuad',
+                                dir: 'alternate',
+                                loop: 1
+                            });
                             
                             // Play audio if not already playing
                             if (audioElement && !audioPlaying) {
@@ -106,10 +112,30 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                 }
+                
+                // Handle any boxes that might have been created as fallbacks
+                const boxes = document.querySelectorAll('a-box');
+                boxes.forEach(box => {
+                    box.addEventListener('click', function() {
+                        console.log('Box clicked');
+                        
+                        // Play audio if not already playing
+                        if (audioElement && !audioPlaying) {
+                            audioElement.play()
+                                .then(() => {
+                                    if (audioControl) {
+                                        audioControl.innerHTML = '<span class="material-icons">pause</span> Pause Mantra';
+                                    }
+                                    audioPlaying = true;
+                                })
+                                .catch(err => console.error('Could not play audio on box click:', err));
+                        }
+                    });
+                });
             } catch (e) {
                 console.error('Error setting up model interactions:', e);
             }
-        }, 2000);
+        }, 1000);
     });
     
     // Adjust model position for mobile/desktop
@@ -121,19 +147,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (window.innerWidth < 768) {
                 // Mobile positioning - bring closer and adjust size
                 idolModel.setAttribute('position', '0 1.0 -2');
-                const currentScale = idolModel.getAttribute('scale');
-                if (currentScale) {
-                    const scaleValue = typeof currentScale === 'string' 
-                        ? currentScale.split(' ').map(Number)
-                        : [currentScale.x, currentScale.y, currentScale.z];
-                    
-                    const mobileScale = scaleValue.map(v => v * 0.8).join(' ');
-                    idolModel.setAttribute('scale', mobileScale);
-                }
             } else {
                 // Desktop positioning
                 idolModel.setAttribute('position', '0 1.5 -3');
-                // Scale is set by asset-loader.js based on model dimensions
             }
         } catch (e) {
             console.error('Error adjusting for device:', e);
@@ -143,4 +159,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Run once and add event listener for resize
     window.addEventListener('resize', adjustForDevice);
     scene.addEventListener('loaded', adjustForDevice);
+    
+    // Force hide the loading screen after a reasonable timeout
+    setTimeout(function() {
+        if (loadingScreen && window.getComputedStyle(loadingScreen).display !== 'none') {
+            console.warn('Forcing hide of loading screen after timeout');
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+            }, 500);
+        }
+    }, 12000);
 });
