@@ -40,7 +40,7 @@ AFRAME.registerComponent('particle-system', {
     this.particleContainer = document.createElement('a-entity');
     this.el.appendChild(this.particleContainer);
     
-    // Apply preset if specified - FIX: Remove the problematic check with attrValue.includes
+    // Apply preset if specified
     if (this.data.preset !== 'none' && this.presets[this.data.preset]) {
       const preset = this.presets[this.data.preset];
       for (const key in preset) {
