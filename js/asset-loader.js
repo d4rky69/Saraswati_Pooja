@@ -71,30 +71,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Panorama handling
-    const panoramaImg = document.getElementById('panorama');
-    if (panoramaImg) {
-        panoramaImg.addEventListener('load', function() {
-            console.log('Panorama loaded successfully');
-            backgroundSky.setAttribute('src', '#panorama');
-            assetLoaded('panorama');
-        });
-        
-        panoramaImg.addEventListener('error', function(e) {
-            console.error('Panorama failed to load, using fallback color');
-            // Use a more visible default color
+const panoramaImg = document.getElementById('panorama');
+if (panoramaImg) {
+    console.log('Attempting to load panorama from:', panoramaImg.getAttribute('src'));
+    
+    panoramaImg.addEventListener('load', function() {
+        console.log('Panorama loaded successfully');
+        backgroundSky.setAttribute('src', '#panorama');
+        assetLoaded('panorama');
+    });
+    
+    panoramaImg.addEventListener('error', function(e) {
+        console.error('Panorama failed to load, using fallback color. Error:', e);
+        // Use a more visible default color
+        backgroundSky.setAttribute('color', '#2A0A4A');
+        assetError('panorama', e);
+    });
+    
+    // Increased timeout from 10s to 20s for larger images
+    setTimeout(function() {
+        if (!assetStatus.panorama) {
+            console.warn('Panorama load timed out, using fallback');
             backgroundSky.setAttribute('color', '#2A0A4A');
-            assetError('panorama', e);
-        });
-        
-        // Force panorama status after timeout
-        setTimeout(function() {
-            if (!assetStatus.panorama) {
-                console.warn('Panorama load timed out, using fallback');
-                backgroundSky.setAttribute('color', '#2A0A4A');
-                assetLoaded('panorama');
-            }
-        }, 10000);
-    } else {
+            assetLoaded('panorama');
+        }
+    }, 20000);
+} else {
         console.warn('Panorama element not found');
         assetError('panorama', 'Element not found');
     }
