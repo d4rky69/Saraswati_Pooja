@@ -12,6 +12,32 @@ document.addEventListener('DOMContentLoaded', function() {
         scene.style.opacity = '1';
     }
     
+    // Additional panorama initialization
+    const panoramaImg = document.getElementById('panorama');
+    const backgroundSky = document.getElementById('background-sky');
+    
+    if (panoramaImg && backgroundSky) {
+        // Try to ensure panorama loads
+        console.log("Double-checking panorama setup");
+        if (panoramaImg.complete) {
+            console.log("Panorama is complete, applying to sky");
+            backgroundSky.setAttribute('src', '#panorama');
+            backgroundSky.removeAttribute('color');
+        } else {
+            // Force reload
+            const imgSrc = panoramaImg.getAttribute('src');
+            panoramaImg.setAttribute('src', '');
+            setTimeout(() => {
+                panoramaImg.setAttribute('src', imgSrc);
+                panoramaImg.addEventListener('load', function() {
+                    console.log("Panorama loaded from reload, applying to sky");
+                    backgroundSky.setAttribute('src', '#panorama');
+                    backgroundSky.removeAttribute('color');
+                });
+            }, 100);
+        }
+    }
+    
     // Audio controls with better error handling
     if (audioControl && audioElement) {
         audioControl.addEventListener('click', function() {
@@ -62,9 +88,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         try {
                             // Create pulse animation
-                            const scaleValue = [50, 50, 50]; // Default scale
-                            const newScale = scaleValue.map(v => v * 1.1).join(' ');
-                            const originalScale = scaleValue.join(' ');
+                            const currentScale = this.getAttribute('scale');
+                            let scaleValues = [3, 3, 3]; // Default scale
+                            
+                            if (currentScale) {
+                                if (typeof currentScale === 'string') {
+                                    scaleValues = currentScale.split(' ').map(Number);
+                                } else if (currentScale.x !== undefined) {
+                                    scaleValues = [currentScale.x, currentScale.y, currentScale.z];
+                                }
+                            }
+                            
+                            const newScale = scaleValues.map(v => v * 1.1).join(' ');
+                            const originalScale = scaleValues.join(' ');
                             
                             this.setAttribute('animation__pulse', {
                                 property: 'scale',
