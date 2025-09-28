@@ -206,4 +206,27 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 500);
         }
     }, 12000);
+    // Ensure the model is visible and positioned correctly
+    const ensureModelVisibility = function() {
+        const idolModel = document.querySelector('#saraswati-model');
+        if (idolModel) {
+            // Make sure it's visible
+            idolModel.setAttribute('visible', 'true');
+            
+            // Position directly in front of camera (closer than before)
+            if (window.innerWidth < 768) {
+                // Mobile - very close
+                idolModel.setAttribute('position', '0 1.0 -1.5');
+            } else {
+                // Desktop - slightly further
+                idolModel.setAttribute('position', '0 1.5 -2');
+            }
+            
+            console.log('Model visibility and position updated');
+        }
+    };
+    
+    // Call it when scene is loaded and again after a short delay to ensure it takes effect
+    scene.addEventListener('loaded', ensureModelVisibility);
+    setTimeout(ensureModelVisibility, 2000);
 });
