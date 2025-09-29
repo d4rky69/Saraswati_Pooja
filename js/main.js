@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
             idolModel.setAttribute('position', '0 1.5 -3');
             
             // Ensure rotation faces the camera
-            idolModel.setAttribute('rotation', '0 270 0');
+            idolModel.setAttribute('rotation', '0 180 0');
             
             console.log('Model visibility, position and rotation updated');
         }
