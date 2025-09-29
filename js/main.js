@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Single consistent position - centered in the scene
             // We're not using different positions for mobile/desktop to avoid conflicts
-            idolModel.setAttribute('position', '-7 1.5 -3');
+            idolModel.setAttribute('position', '0 1.5 -3');
             
             // Ensure rotation faces the camera
             idolModel.setAttribute('rotation', '0 270 0');
